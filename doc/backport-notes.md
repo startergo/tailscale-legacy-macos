@@ -135,7 +135,23 @@ it is, via MacPorts).
   node's 100.x address from another tailnet device.
 - Log: `/var/log/tailscaled.log`.
 
-## Snow Leopard (10.6) outlook
+## Snow Leopard (10.6): blocker #0 — the CPU, not the OS
+
+First failure on a real SL Mac is `Illegal instruction` (SIGILL), before any
+dyld error: **Go ≥1.26's default amd64 baseline emits POPCNT/SSE4.2**, and
+SL-era Macs carry Core 2 CPUs (POPCNT is Nehalem+). Confirmed by disassembly:
+a default build contains ~340 POPCNT/CRC32 sites; `GOAMD64=v1` removes the
+unconditional ones (the few dozen that remain live inside CPU-feature-
+dispatched multi-version functions and never execute on a Core 2).
+
+`MACOS_MIN=10.6 ./build.sh` sets `GOAMD64=v1` + `-mmacosx-version-min=10.6`
+automatically.
+
+Known 10.6 symbol gap (beyond the 10.9 set): `arc4random_buf` (10.7+) —
+stubbed in `shim/stub.c` via the ancient `arc4random()`. Go's darwin netpoller
+uses plain `kevent` (not 10.9-only `kevent64`), so no kqueue problem.
+
+## Snow Leopard (10.6) outlook (remaining work)
 
 Same architecture; expect a longer delta list (10.6 libSystem predates even
 more: `arc4random_buf`?, `pthread_chdir`?, etc. — MacPorts legacy-support

@@ -6,14 +6,24 @@
 #
 # Usage:  ./build.sh [tailscale-version]        (default 1.102.4)
 # Env:
+#   MACOS_MIN deployment target: 10.9 (default) or 10.6 for Snow Leopard.
+#            10.6 also forces GOAMD64=v1 — SL Macs have Core 2 CPUs without
+#            POPCNT/SSE4.2, and Go ≥1.26's default baseline emits them
+#            (SIGILL "Illegal instruction" on first use). v1 stays SSE2-only;
+#            the remaining guarded paths are CPU-dispatched at runtime.
 #   GO        go binary to build with      (default: auto-resolved from go.mod)
 #   SHIM_HOST ssh host to fetch the MacPorts legacy shim from, if not in shim/
 #   SMOKE_HOST optional ssh host to run the smoke-test binary on before building
 set -euo pipefail
 
 TSVER="${1:-1.102.4}"
+MACOS_MIN="${MACOS_MIN:-10.9}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
+
+AMD64_LEVEL=v2
+[ "$MACOS_MIN" = 10.6 ] && AMD64_LEVEL=v1
+export GOAMD64="$AMD64_LEVEL"
 
 # --- prerequisites -----------------------------------------------------------
 command -v clang >/dev/null || { echo "need clang (Xcode CLT)"; exit 1; }
@@ -29,7 +39,7 @@ fi
 SHIM_A="$ROOT/shim/libMacportsLegacySupport.a"
 
 # --- stub + toolchain --------------------------------------------------------
-clang -arch x86_64 -mmacosx-version-min=10.9 -c shim/stub.c -o shim/stub.o
+clang -arch x86_64 -mmacosx-version-min=$MACOS_MIN -c shim/stub.c -o shim/stub.o
 STUB_O="$ROOT/shim/stub.o"
 
 SRC="$ROOT/src/tailscale-$TSVER"
@@ -74,17 +84,17 @@ echo "building tailscale $TSVER with $GO ($(basename "$SRC"))"
 #                             SDK dylibs before pulling archives; exe doesn't
 #  -Wl,-force_load         -> the shim archive MUST come in whole
 #  stub.o                  -> object files always link; archives need -u tricks
-LDFLAGS="-linkmode external -extldflags '-arch x86_64 -mmacosx-version-min=10.9 -Wl,-force_load,$SHIM_A $STUB_O' -X tailscale.com/version.longStamp=$TSVER -X tailscale.com/version.shortStamp=$TSVER -X tailscale.com/version.gitCommitStamp=non-git"
+LDFLAGS="-linkmode external -extldflags '-arch x86_64 -mmacosx-version-min=$MACOS_MIN -Wl,-force_load,$SHIM_A $STUB_O' -X tailscale.com/version.longStamp=$TSVER -X tailscale.com/version.shortStamp=$TSVER -X tailscale.com/version.gitCommitStamp=non-git"
 
 # NB: no GOTOOLCHAIN=local — go.mod's toolchain directive auto-switches to the
 # required version; the dl-wrapper fallback below covers offline setups.
-ENVC="CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC=clang CGO_CFLAGS=-mmacosx-version-min=10.9"
+ENVC="CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC=clang CGO_CFLAGS=-mmacosx-version-min=$MACOS_MIN"
 
 # --- optional smoke test: prove the toolchain produces 10.9-runnable code ----
 if [ -n "${SMOKE_HOST:-}" ]; then
     echo "== smoke test on $SMOKE_HOST =="
     ( cd "$ROOT/test" && env $ENVC "$GO" build -buildmode=exe \
-        -ldflags "-linkmode external -extldflags '-arch x86_64 -mmacosx-version-min=10.9 -Wl,-force_load,$SHIM_A $STUB_O'" \
+        -ldflags "-linkmode external -extldflags '-arch x86_64 -mmacosx-version-min=$MACOS_MIN -Wl,-force_load,$SHIM_A $STUB_O'" \
         -o /tmp/tsmoke smoke.go )
     scp -q /tmp/tsmoke "$SMOKE_HOST:/tmp/tsmoke"
     ssh "$SMOKE_HOST" 'chmod +x /tmp/tsmoke && /tmp/tsmoke' \

@@ -14,3 +14,18 @@ int notify_is_valid_token(int token) {
     (void)token;
     return 0;
 }
+
+/* arc4random_buf: 10.7+ (missing on Snow Leopard). arc4random() itself is
+ * ancient, so implement the buffered variant on top of it. Used by crypto/rand
+ * seeding; correct everywhere, so unconditionally linking this stub is safe. */
+#include <stdint.h>
+extern uint32_t arc4random(void);
+void arc4random_buf(void *buf, unsigned long n) {
+    unsigned char *p = (unsigned char *)buf;
+    while (n > 0) {
+        uint32_t r = arc4random();
+        unsigned long take = n < 4 ? n : 4;
+        for (unsigned long i = 0; i < take; i++) { *p++ = (unsigned char)(r & 0xff); r >>= 8; }
+        n -= take;
+    }
+}
