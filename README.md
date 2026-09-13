@@ -38,16 +38,16 @@ an auth key in the same step. Remove with `scripts/uninstall.sh`.
 **Build from source** (on a modern Mac; needs Xcode CLT + go ≥ go.mod's requirement):
 
 ```sh
-./shim/fetch-shim.sh mavericksm          # once: pull MacPorts' compat lib from the target
+./shim/fetch-shim.sh old-mac          # once: pull MacPorts' compat lib from the target
 ./build.sh 1.102.4                       # → out/tailscale{,d}
 ./installer/build-pkg.sh                 # optional: flat .pkg
-./deploy/install.sh mavericksm tskey-auth-...   # remote install + launchd + join
+./deploy/install.sh old-mac tskey-auth-...   # remote install + launchd + join
 ```
 
 Smoke-test the toolchain against a target before the big build:
 
 ```sh
-SMOKE_HOST=mavericksm ./build.sh
+SMOKE_HOST=old-mac ./build.sh
 ```
 
 The daemon **must** keep `GODEBUG=x509usefallbackroots=1` in its environment
@@ -72,7 +72,7 @@ doc/backport-notes.md               the full how-it-works + audit method
 | Target | State |
 |---|---|
 | OS X 10.9 Mavericks (x86_64) | ✅ 1.102.4 running, joined, p2p verified |
-| OS X 10.6 Snow Leopard | ✅ 1.102.4 running (Core 2 Duo, GOAMD64=v1), joined as `macmini-2` — needs 4 extra stubs + peercred patch (below) |
+| OS X 10.6 Snow Leopard | ✅ 1.102.4 running (Core 2 Duo, GOAMD64=v1), joined on real hardware — needs 4 extra stubs + peercred patch (below) |
 
 Upgrade path: re-run `./build.sh <new-version>`. If a newer Go drags in new
 post-10.9 symbols, the dyld error names the first one — extend `shim/stub.c`
