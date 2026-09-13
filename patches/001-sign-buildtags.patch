@@ -1,0 +1,22 @@
+--- a/control/controlclient/sign_supported.go
++++ b/control/controlclient/sign_supported.go
+@@ -1,7 +1,7 @@
+ // Copyright (c) Tailscale Inc & contributors
+ // SPDX-License-Identifier: BSD-3-Clause
+ 
+-//go:build windows || (darwin && !ios && cgo)
++//go:build windows
+ 
+ package controlclient
+ 
+--- a/control/controlclient/sign_unsupported.go
++++ b/control/controlclient/sign_unsupported.go
+@@ -1,7 +1,7 @@
+ // Copyright (c) Tailscale Inc & contributors
+ // SPDX-License-Identifier: BSD-3-Clause
+ 
+-//go:build (!windows && !(darwin && cgo)) || ios
++//go:build !windows
+ 
+ package controlclient
+ 

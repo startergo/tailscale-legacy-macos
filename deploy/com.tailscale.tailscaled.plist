@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.tailscale.tailscaled</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/local/bin/tailscaled</string>
+		<string>--state=/var/lib/tailscale/tailscaled.state</string>
+		<string>--socket=/var/run/tailscaled.socket</string>
+	</array>
+	<!-- REQUIRED: pure-Go TLS root verification (see patches/files/fallbackroots_darwin109.go) -->
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>GODEBUG</key>
+		<string>x509usefallbackroots=1</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/var/log/tailscaled.log</string>
+	<key>StandardErrorPath</key>
+	<string>/var/log/tailscaled.log</string>
+</dict>
+</plist>
