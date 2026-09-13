@@ -58,6 +58,12 @@ git apply --check "$ROOT/patches/001-sign-buildtags.patch" 2>/dev/null \
     && git apply "$ROOT/patches/001-sign-buildtags.patch" \
     || echo "patch 001 already applied or tree dirty — skipping"
 
+# 1b) tolerate kernels without unix-socket peer credentials (macOS 10.6/10.7):
+#     ENOTSUP from LOCAL_PEERCRED/LOCAL_PEERPID must not 401 every CLI call
+git apply --check "$ROOT/patches/002-peercred-legacy-kernels.patch" 2>/dev/null \
+    && git apply "$ROOT/patches/002-peercred-legacy-kernels.patch" \
+    || echo "patch 002 already applied or tree dirty — skipping"
+
 # 2) pure-Go TLS root verification (crypto/x509's system verifier needs 10.14+)
 cp "$ROOT/patches/files/fallbackroots_darwin109.go" cmd/tailscaled/
 cp /etc/ssl/cert.pem cmd/tailscaled/fallback-roots.pem   # Mozilla bundle

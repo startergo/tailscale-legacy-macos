@@ -72,7 +72,7 @@ doc/backport-notes.md               the full how-it-works + audit method
 | Target | State |
 |---|---|
 | OS X 10.9 Mavericks (x86_64) | ✅ 1.102.4 running, joined, p2p verified |
-| OS X 10.6 Snow Leopard | 🚧 SIGILL root-caused (Go 1.26 emits POPCNT/SSE4.2; Core 2 lacks them) — `MACOS_MIN=10.6 ./build.sh` builds a `GOAMD64=v1` flavor; `arc4random_buf` stubbed; pending on-hardware audit (box offline at time of writing) |
+| OS X 10.6 Snow Leopard | ✅ 1.102.4 running (Core 2 Duo, GOAMD64=v1), joined as `macmini-2` — needs 4 extra stubs + peercred patch (below) |
 
 Upgrade path: re-run `./build.sh <new-version>`. If a newer Go drags in new
 post-10.9 symbols, the dyld error names the first one — extend `shim/stub.c`

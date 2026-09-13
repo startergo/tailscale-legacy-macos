@@ -29,3 +29,37 @@ void arc4random_buf(void *buf, unsigned long n) {
         n -= take;
     }
 }
+
+/* xpc_date_create_from_current: 10.8+ (no public XPC on 10.6). Called by Go's
+ * runtime osinit_hack (sys_darwin.go) purely as a workaround for an Apple
+ * fork+exec libc bug — the return value is discarded, so NULL is fine. */
+void *xpc_date_create_from_current(void) {
+    return 0;
+}
+
+/* pthread_main_thread_np: not exported from 10.6 libSystem. Return the real
+ * main thread's handle, cached by a constructor (constructors run on the
+ * main thread before main). */
+#include <pthread.h>
+static pthread_t stub_main_thread;
+__attribute__((constructor)) static void stub_cache_main_thread(void) {
+    stub_main_thread = pthread_self();
+}
+pthread_t pthread_main_thread_np(void) {
+    return stub_main_thread;
+}
+
+/* strnlen / dirfd: POSIX but absent from 10.6 libSystem (the $UNIX2003 era).
+ * Implementations are trivial and correct on every version. */
+#include <stddef.h>
+#include <dirent.h>
+#undef strnlen
+#undef dirfd
+size_t strnlen(const char *s, size_t maxlen) {
+    const char *p = s;
+    while (maxlen-- > 0 && *p) p++;
+    return (size_t)(p - s);
+}
+int dirfd(DIR *dirp) {
+    return dirp ? dirp->__dd_fd : -1;
+}

@@ -1,0 +1,40 @@
+--- a/ipn/ipnauth/ipnauth.go
++++ b/ipn/ipnauth/ipnauth.go
+@@ -176,6 +176,14 @@
+ 	}
+ 	creds := ci.creds
+ 	if creds == nil {
++		if runtime.GOOS == "darwin" {
++			// macOS 10.6/10.7 kernels cannot report unix-socket peer
++			// credentials (LOCAL_PEERCRED/LOCAL_PEERPID unimplemented).
++			// Grant read-write as in the pre-peercred era; the socket's
++			// permissions remain the only gate.
++			logf("connection from unknown peer; darwin legacy kernel, read-write")
++			return rw
++		}
+ 		logf("connection from unknown peer; read-only")
+ 		return ro
+ 	}
+--- a/ipn/ipnauth/ipnauth_unix_creds.go
++++ b/ipn/ipnauth/ipnauth_unix_creds.go
+@@ -7,6 +7,7 @@
+ 
+ import (
+ 	"net"
++	"runtime"
+ 
+ 	"github.com/tailscale/peercred"
+ 	"tailscale.com/types/logger"
+@@ -24,6 +25,12 @@
+ 	} else if err == peercred.ErrNotImplemented {
+ 		// peercred.Get is not implemented on this OS (such as OpenBSD)
+ 		// Just leave creds as nil, as documented.
++	} else if runtime.GOOS == "darwin" {
++		// macOS 10.6/10.7 kernels do not implement the LOCAL_PEERCRED /
++		// LOCAL_PEERPID socket options; peercred.Get then fails on every
++		// connection. Tolerate any such failure as "unimplemented" rather
++		// than rejecting the connection (IsReadonlyConn handles the
++		// nil-creds case). Supported macOS versions never hit this path.
+ 	} else {
+ 		return nil, err
+ 	}

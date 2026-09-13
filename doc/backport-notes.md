@@ -147,9 +147,30 @@ dispatched multi-version functions and never execute on a Core 2).
 `MACOS_MIN=10.6 ./build.sh` sets `GOAMD64=v1` + `-mmacosx-version-min=10.6`
 automatically.
 
-Known 10.6 symbol gap (beyond the 10.9 set): `arc4random_buf` (10.7+) —
-stubbed in `shim/stub.c` via the ancient `arc4random()`. Go's darwin netpoller
-uses plain `kevent` (not 10.9-only `kevent64`), so no kqueue problem.
+Known 10.6 symbol gap (beyond the 10.9 set) — all stubbed in `shim/stub.c`:
+
+| Symbol | Why | Stub |
+|---|---|---|
+| `arc4random_buf` | 10.7+ | real impl via ancient `arc4random()` |
+| `xpc_date_create_from_current` | 10.8+ (no public XPC on 10.6) | NULL — Go's `osinit_hack` discards the result |
+| `pthread_main_thread_np` | not exported from 10.6 libSystem | real impl: constructor caches `pthread_self()` (constructors run on the main thread) |
+| `strnlen`, `dirfd` | POSIX but absent from 10.6 libSystem ($UNIX2003 era) | real, trivial impls |
+
+Go's darwin netpoller uses plain `kevent` (not 10.9-only `kevent64`), so no
+kqueue problem. CF/IOKit/Security framework symbols all exist on 10.6.
+
+### 10.6 blocker #2: no unix-socket peer credentials (patch 002)
+
+The 10.6 kernel doesn't implement the `LOCAL_PEERCRED`/`LOCAL_PEERPID` socket
+options, so `tailscaled`'s localapi 401s **every** CLI call with
+`unix.GetsockoptInt: operation not supported on socket`. Patch
+`002-peercred-legacy-kernels.patch`: (a) treat any peercred failure on darwin
+as "not implemented" instead of rejecting the connection, and (b) when creds
+are nil on darwin, grant read-write as in the pre-peercred era — the socket's
+permissions remain the only local access gate. Supported macOS versions never
+hit either path (peercred succeeds there). Note the 10.6 nm can't fully parse
+the framework dylibs — the dyld-error-driven loop (stub → rebuild → run) is
+the reliable audit method.
 
 ## Snow Leopard (10.6) outlook (remaining work)
 
