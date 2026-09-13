@@ -28,6 +28,7 @@ to the old Mac, then either:
 ```sh
 # .pkg (GUI Installer, or:)          sudo installer -pkg tailscale-1.102.4-macos10.9.pkg -target /
 # tarball:                           tar xzf …tar.gz && cd … && sudo AUTHKEY=tskey-… ./install.sh
+# Snow Leopard (Core 2 CPUs):        use the *-macos10.6.pkg — GOAMD64=v1 flavor
 ```
 
 Both install to `/usr/local/bin` (self-contained binaries — no MacPorts
