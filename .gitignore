@@ -1,3 +1,5 @@
 src/
 out/
 shim/*.o
+dist/
+*.tar.gz
