@@ -1,0 +1,21 @@
+#!/bin/bash
+# postinstall — runs as root from Installer on the target Mac.
+set -e
+
+PLIST=/Library/LaunchDaemons/com.tailscale.tailscaled.plist
+LOG=/var/log/tailscaled.log
+
+mkdir -p /var/lib/tailscale
+touch "$LOG"
+
+# stop any previous tailscaled (older /opt/local install or prior pkg), then load ours
+( launchctl unload "$PLIST" 2>/dev/null || true )
+pkill -x tailscaled 2>/dev/null || true
+sleep 1
+
+launchctl load "$PLIST"
+
+echo "tailscaled installed and loaded."
+echo "join with:   /usr/local/bin/tailscale --socket=/var/run/tailscaled.socket up --authkey=tskey-..."
+echo "status:      /usr/local/bin/tailscale --socket=/var/run/tailscaled.socket status"
+exit 0

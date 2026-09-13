@@ -21,11 +21,26 @@ current tailscale runs fine — 17 years of OS underneath, zero spoofing.
 
 ## Quickstart
 
+**Install without building** — grab the
+[release](https://github.com/startergo/tailscale-legacy-macos/releases), copy
+to the old Mac, then either:
+
 ```sh
-# on a modern Mac (needs Xcode CLT + go ≥ go.mod's requirement):
+# .pkg (GUI Installer, or:)          sudo installer -pkg tailscale-1.102.4-macos10.9.pkg -target /
+# tarball:                           tar xzf …tar.gz && cd … && sudo AUTHKEY=tskey-… ./install.sh
+```
+
+Both install to `/usr/local/bin` (self-contained binaries — no MacPorts
+needed), load the launchd daemon, keep any existing state, and can join with
+an auth key in the same step. Remove with `scripts/uninstall.sh`.
+
+**Build from source** (on a modern Mac; needs Xcode CLT + go ≥ go.mod's requirement):
+
+```sh
 ./shim/fetch-shim.sh mavericksm          # once: pull MacPorts' compat lib from the target
 ./build.sh 1.102.4                       # → out/tailscale{,d}
-./deploy/install.sh mavericksm tskey-auth-...   # deploy + launchd + join
+./installer/build-pkg.sh                 # optional: flat .pkg
+./deploy/install.sh mavericksm tskey-auth-...   # remote install + launchd + join
 ```
 
 Smoke-test the toolchain against a target before the big build:

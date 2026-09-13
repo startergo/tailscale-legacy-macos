@@ -3,3 +3,5 @@ out/
 shim/*.o
 dist/
 *.tar.gz
+installer/stage/
+*.pkg
